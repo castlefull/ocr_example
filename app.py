@@ -70,25 +70,25 @@ if uploaded_file is not None:
         st.subheader("Step 2: OCR 텍스트 추출")
         
         # 🔴 추가: OCR 임계값 슬라이더 (손글씨 튜닝용)
-        with st.expander("⚙️ 고급 설정 (손글씨 튜닝)"):
-            det_db_thresh = st.slider(
-                "Detection Threshold (텍스트 맵 임계값)",
-                0.1, 0.9, 0.2, 0.05,
-                help="값을 낮출수록 더 많은 후보 영역을 살립니다. 손글씨는 0.1~0.2 권장."
-            )
-            det_db_box_thresh = st.slider(
-                "Box Threshold (박스 점수 임계값)",
-                0.1, 0.9, 0.4, 0.05,
-                help="값을 낮추면 점수가 낮은 박스도 살립니다. 손글씨는 0.3~0.4 권장."
-            )
+        # with st.expander("⚙️ 고급 설정 (손글씨 튜닝)"):
+        #     det_db_thresh = st.slider(
+        #         "Detection Threshold (텍스트 맵 임계값)",
+        #         0.1, 0.9, 0.2, 0.05,
+        #         help="값을 낮출수록 더 많은 후보 영역을 살립니다. 손글씨는 0.1~0.2 권장."
+        #     )
+        #     det_db_box_thresh = st.slider(
+        #         "Box Threshold (박스 점수 임계값)",
+        #         0.1, 0.9, 0.4, 0.05,
+        #         help="값을 낮추면 점수가 낮은 박스도 살립니다. 손글씨는 0.3~0.4 권장."
+        #     )
         
         if st.button("OCR 실행"):
             with st.spinner("텍스트 추출 중... (약 10초 소요)"):
                 # 🔴 수정: QualityFormOCR에 슬라이더 값 전달
                 ocr = QualityFormOCR(
                     lang='korean',
-                    det_db_thresh=det_db_thresh,
-                    det_db_box_thresh=det_db_box_thresh,
+                    # det_db_thresh=det_db_thresh,
+                    # det_db_box_thresh=det_db_box_thresh,
                 )
                 extracted_data = ocr.extract_text(temp_path)
                 
@@ -221,5 +221,6 @@ if uploaded_file is not None:
 
 else:
     st.info("👆 왼쪽 사이드바에서 처리 단계를 선택한 후 이미지를 업로드하세요.")
+
 
 
