@@ -14,7 +14,7 @@ class QualityFormOCR:
     
     def extract_text(self, image_path):
         """이미지에서 텍스트 추출"""
-        result = self.ocr.ocr(image_path, cls=True)
+        result = self.ocr.ocr(image_path)
         
         extracted_data = []
         for line in result[0]:
@@ -77,5 +77,6 @@ class QualityFormOCR:
 #     result = ocr.parse_quality_form("quality_form_001.jpg")
 #     ocr.to_json(result, "output_001.json")
 #     print(result)
+
 
 
