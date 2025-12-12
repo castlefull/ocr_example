@@ -4,19 +4,23 @@ import json
 class QualityFormOCR:
     """품질검사서 OCR 추출기 (PaddleOCR 기반)"""
     
-    def __init__(self, lang='korean'):
-        # PaddleOCR 3.x 권장 방식
+    def __init__(
+        self,
+        lang: str = 'korean',
+        det_db_thresh: float = 0.3,
+        det_db_box_thresh: float = 0.5,
+    ):
+        # PaddleOCR 3.x: predict 파이프라인 + 탐지 파라미터 조정[web:169][web:199]
         self.ocr = PaddleOCR(
             lang=lang,
-            use_textline_orientation=True,      # 줄 방향 보정 사용[web:178]
-            use_doc_orientation_classify=False, # 문서 전체 각도 분류 끔[web:169]
-            use_doc_unwarping=False             # 문서 펴기 끔[web:169]
+            use_textline_orientation=True,
+            text_det_thresh=det_db_thresh,        # 예전 det_db_thresh 역할[web:201][web:196]
+            text_det_box_thresh=det_db_box_thresh # 예전 det_db_box_thresh 역할
         )
     
     def extract_text(self, image_path):
         """이미지에서 텍스트 추출 - predict() 기반"""
         try:
-            # 3.x에선 predict()가 기본 API[web:169]
             results = self.ocr.predict(image_path)
         except Exception as e:
             print(f"OCR 실행 오류: {e}")
@@ -24,11 +28,9 @@ class QualityFormOCR:
         
         extracted_data = []
 
-        # predict()는 generator 형태로 여러 페이지/결과를 줄 수 있음[web:169]
         for res in results:
             try:
-                # res.json은 dict 형식의 전체 결과[web:169]
-                data = res.json
+                data = res.json  # 3.x 표준 출력[web:169]
                 rec_texts = data.get("rec_texts", [])
                 rec_scores = data.get("rec_scores", [])
                 rec_boxes = data.get("rec_boxes", [])
@@ -93,5 +95,7 @@ class QualityFormOCR:
     
     def to_json(self, parsed_data, output_path):
         """JSON 파일로 저장"""
+        import os
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(parsed_data, f, ensure_ascii=False, indent=2)
