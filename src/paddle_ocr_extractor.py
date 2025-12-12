@@ -6,10 +6,11 @@ class QualityFormOCR:
     """품질검사서 OCR 추출기 (PaddleOCR 기반)"""
     
     def __init__(self, lang='korean'):
+        # PaddleOCR 3.0+ 호환: 최소 파라미터만 사용
         self.ocr = PaddleOCR(
             use_angle_cls=True,
-            lang=lang,
-            show_log=False  # 로그 숨기기
+            lang=lang
+            # show_log, use_gpu 등 제거됨!
         )
     
     def extract_text(self, image_path):
@@ -34,7 +35,6 @@ class QualityFormOCR:
                     text = str(line[1].get('text', ''))
                     confidence = float(line[1].get('confidence', 1.0))
                 else:
-                    # 예상치 못한 형식
                     text = str(line[1])
                     confidence = 1.0
                 
@@ -49,7 +49,7 @@ class QualityFormOCR:
                 })
                 
             except (IndexError, TypeError, ValueError) as e:
-                print(f"라인 파싱 오류: {e}, 데이터: {line}")
+                print(f"라인 파싱 오류: {e}")
                 continue
         
         return extracted_data
@@ -84,7 +84,6 @@ class QualityFormOCR:
             for field, keywords in field_keywords.items():
                 for keyword in keywords:
                     if keyword in text:
-                        # 이미 해당 필드가 없거나, 더 높은 신뢰도면 업데이트
                         if field not in parsed_result or \
                            item["confidence"] > parsed_result[field]["confidence"]:
                             parsed_result[field] = {
@@ -101,24 +100,3 @@ class QualityFormOCR:
         """JSON 파일로 저장"""
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(parsed_data, f, ensure_ascii=False, indent=2)
-    
-    def to_dict(self, parsed_data):
-        """딕셔너리 반환 (Streamlit용)"""
-        return parsed_data
-
-
-# 사용 예시
-if __name__ == "__main__":
-    ocr = QualityFormOCR(lang='korean')
-    
-    # 텍스트 추출만
-    extracted = ocr.extract_text("quality_form_001.jpg")
-    print("추출된 텍스트:")
-    for item in extracted:
-        print(f"- {item['text']} (신뢰도: {item['confidence']:.2f})")
-    
-    # 필드별 파싱
-    result = ocr.parse_quality_form("quality_form_001.jpg")
-    ocr.to_json(result, "output_001.json")
-    print("\n파싱 결과:")
-    print(result)
