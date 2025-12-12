@@ -1,0 +1,23 @@
+# 필수 라이브러리
+
+opencv-python>=4.8.0
+paddlepaddle-gpu>=2.5.0    # GPU 버전
+paddleocr>=2.7.0
+transformers>=4.35.0
+torch>=2.0.0
+torchvision>=0.15.0
+
+# 데이터 증강 및 처리
+
+albumentations>=1.3.0
+Pillow>=10.0.0
+numpy>=1.24.0
+pandas>=2.0.0
+
+# 평가
+
+evaluate>=0.4.0
+jiwer>=3.0.0              # CER, WER 계산
+
+# 배포
+streamlit
