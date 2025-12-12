@@ -1,4 +1,3 @@
-# 📁 paddle_ocr_extractor.py
 from paddleocr import PaddleOCR
 import json
 
@@ -6,50 +5,72 @@ class QualityFormOCR:
     """품질검사서 OCR 추출기 (PaddleOCR 기반)"""
     
     def __init__(self, lang='korean'):
-        # PaddleOCR 3.0+ 호환: 최소 파라미터만 사용
+        # PaddleOCR 3.0+ 최소 파라미터
         self.ocr = PaddleOCR(
             use_angle_cls=True,
             lang=lang
-            # show_log, use_gpu 등 제거됨!
         )
     
     def extract_text(self, image_path):
-        """이미지에서 텍스트 추출"""
-        result = self.ocr.ocr(image_path)
+        """이미지에서 텍스트 추출 - 안전한 파싱"""
+        try:
+            result = self.ocr.ocr(image_path)
+        except Exception as e:
+            print(f"OCR 실행 오류: {e}")
+            return []
         
         extracted_data = []
         
-        # 결과가 비어있는지 확인
-        if not result or not result[0]:
+        # 결과가 None이거나 비어있는지 확인
+        if not result:
+            print("OCR 결과가 None입니다.")
             return extracted_data
         
-        for line in result[0]:
+        if not result[0]:
+            print("OCR 결과가 비어있습니다.")
+            return extracted_data
+        
+        # 각 라인 안전하게 파싱
+        for idx, line in enumerate(result[0]):
             try:
-                bbox = line[0]
+                # 기본 구조: [bbox, (text, confidence)]
+                if not line or len(line) < 2:
+                    print(f"라인 {idx}: 구조 불완전 - {line}")
+                    continue
                 
-                # PaddleOCR 3.0+ 호환: 안전하게 text와 confidence 추출
-                if isinstance(line[1], (list, tuple)) and len(line[1]) >= 2:
-                    text = str(line[1][0])
-                    confidence = float(line[1][1])
-                elif isinstance(line[1], dict):
-                    text = str(line[1].get('text', ''))
-                    confidence = float(line[1].get('confidence', 1.0))
-                else:
-                    text = str(line[1])
+                bbox = line[0]
+                text_info = line[1]
+                
+                # text와 confidence 안전하게 추출
+                if isinstance(text_info, (list, tuple)):
+                    if len(text_info) >= 2:
+                        text = str(text_info[0])
+                        confidence = float(text_info[1])
+                    elif len(text_info) == 1:
+                        text = str(text_info[0])
+                        confidence = 1.0
+                    else:
+                        print(f"라인 {idx}: text_info 비어있음 - {text_info}")
+                        continue
+                elif isinstance(text_info, str):
+                    text = text_info
                     confidence = 1.0
+                else:
+                    print(f"라인 {idx}: 알 수 없는 형식 - {text_info}")
+                    continue
                 
                 # 빈 텍스트 스킵
-                if not text.strip():
+                if not text or not text.strip():
                     continue
                 
                 extracted_data.append({
                     "bbox": bbox,
-                    "text": text,
+                    "text": text.strip(),
                     "confidence": confidence
                 })
                 
-            except (IndexError, TypeError, ValueError) as e:
-                print(f"라인 파싱 오류: {e}")
+            except Exception as e:
+                print(f"라인 {idx} 파싱 오류: {e}, 데이터: {line}")
                 continue
         
         return extracted_data
@@ -58,7 +79,9 @@ class QualityFormOCR:
         """품질검사서 필드별 파싱"""
         raw_data = self.extract_text(image_path)
         
-        # 키워드 기반 필드 매핑
+        if not raw_data:
+            return {"error": "텍스트 추출 실패", "full_text": ""}
+        
         field_keywords = {
             "lot_number": ["시료명", "시료번호", "Lot No", "LOT"],
             "inspection_date": ["검사일자", "일자", "Date"],
@@ -72,13 +95,12 @@ class QualityFormOCR:
             "product_name": ["제품명", "품명", "Product"],
             "inspector": ["검사자", "담당자", "Inspector"],
             "result": ["판정", "결과", "Result", "합격", "불합격"],
-            "record": ['검사기록', '무게', "농도", "Weight", "Concentration"]
+            "record": ['검사기록', '무게', "농도"]
         }
         
         parsed_result = {}
         full_text = " ".join([item["text"] for item in raw_data])
         
-        # 각 필드별로 매칭 시도
         for item in raw_data:
             text = item["text"]
             for field, keywords in field_keywords.items():
@@ -91,9 +113,7 @@ class QualityFormOCR:
                                 "confidence": item["confidence"]
                             }
         
-        # 전체 텍스트도 포함
         parsed_result["full_text"] = full_text
-        
         return parsed_result
     
     def to_json(self, parsed_data, output_path):
