@@ -75,6 +75,23 @@ if uploaded_file is not None:
                 ocr = QualityFormOCR(lang='korean')
                 extracted_data = ocr.extract_text(temp_path)
                 
+                if not extracted_data:
+                    st.warning("⚠️ 텍스트를 찾을 수 없습니다.")
+                    st.info("""
+                    **가능한 원인:**
+                    - 이미지가 너무 작거나 해상도가 낮음
+                    - 텍스트가 흐리거나 배경과 구분이 안 됨
+                    - 손글씨가 너무 흘림체
+                    
+                    **해결 방법:**
+                    - 300 DPI 이상의 선명한 이미지 사용
+                    - 조명이 좋은 환경에서 촬영
+                    - 텍스트가 잘 보이는 영역만 크롭
+                    """)
+                else:
+                    st.success(f"✅ {len(extracted_data)}개 텍스트 발견!")
+                    for item in extracted_data:
+                        st.write(f"- {item['text']} ({item['confidence']:.2%})")
                 # 결과 표시
                 st.subheader("추출된 텍스트")
                 for idx, item in enumerate(extracted_data):
@@ -184,3 +201,4 @@ if uploaded_file is not None:
 
 else:
     st.info("👆 왼쪽 사이드바에서 처리 단계를 선택한 후 이미지를 업로드하세요.")
+
