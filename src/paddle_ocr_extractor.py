@@ -9,7 +9,7 @@ class QualityFormOCR:
         self.ocr = PaddleOCR(
             use_angle_cls=True,
             lang=lang,
-            use_gpu=False
+            # use_gpu=False
         )
     
     def extract_text(self, image_path):
@@ -77,4 +77,5 @@ class QualityFormOCR:
 #     result = ocr.parse_quality_form("quality_form_001.jpg")
 #     ocr.to_json(result, "output_001.json")
 #     print(result)
+
 
