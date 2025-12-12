@@ -5,73 +5,48 @@ class QualityFormOCR:
     """품질검사서 OCR 추출기 (PaddleOCR 기반)"""
     
     def __init__(self, lang='korean'):
-        # PaddleOCR 3.0+ 최소 파라미터
+        # PaddleOCR 3.x 권장 방식
         self.ocr = PaddleOCR(
-            use_angle_cls=True,
-            lang=lang
+            lang=lang,
+            use_textline_orientation=True,      # 줄 방향 보정 사용[web:178]
+            use_doc_orientation_classify=False, # 문서 전체 각도 분류 끔[web:169]
+            use_doc_unwarping=False             # 문서 펴기 끔[web:169]
         )
     
     def extract_text(self, image_path):
-        """이미지에서 텍스트 추출 - 안전한 파싱"""
+        """이미지에서 텍스트 추출 - predict() 기반"""
         try:
-            result = self.ocr.ocr(image_path)
+            # 3.x에선 predict()가 기본 API[web:169]
+            results = self.ocr.predict(image_path)
         except Exception as e:
             print(f"OCR 실행 오류: {e}")
             return []
         
         extracted_data = []
-        
-        # 결과가 None이거나 비어있는지 확인
-        if not result:
-            print("OCR 결과가 None입니다.")
-            return extracted_data
-        
-        if not result[0]:
-            print("OCR 결과가 비어있습니다.")
-            return extracted_data
-        
-        # 각 라인 안전하게 파싱
-        for idx, line in enumerate(result[0]):
+
+        # predict()는 generator 형태로 여러 페이지/결과를 줄 수 있음[web:169]
+        for res in results:
             try:
-                # 기본 구조: [bbox, (text, confidence)]
-                if not line or len(line) < 2:
-                    print(f"라인 {idx}: 구조 불완전 - {line}")
-                    continue
-                
-                bbox = line[0]
-                text_info = line[1]
-                
-                # text와 confidence 안전하게 추출
-                if isinstance(text_info, (list, tuple)):
-                    if len(text_info) >= 2:
-                        text = str(text_info[0])
-                        confidence = float(text_info[1])
-                    elif len(text_info) == 1:
-                        text = str(text_info[0])
-                        confidence = 1.0
-                    else:
-                        print(f"라인 {idx}: text_info 비어있음 - {text_info}")
+                # res.json은 dict 형식의 전체 결과[web:169]
+                data = res.json
+                rec_texts = data.get("rec_texts", [])
+                rec_scores = data.get("rec_scores", [])
+                rec_boxes = data.get("rec_boxes", [])
+
+                for text, score, box in zip(rec_texts, rec_scores, rec_boxes):
+                    if not text or not str(text).strip():
                         continue
-                elif isinstance(text_info, str):
-                    text = text_info
-                    confidence = 1.0
-                else:
-                    print(f"라인 {idx}: 알 수 없는 형식 - {text_info}")
-                    continue
-                
-                # 빈 텍스트 스킵
-                if not text or not text.strip():
-                    continue
-                
-                extracted_data.append({
-                    "bbox": bbox,
-                    "text": text.strip(),
-                    "confidence": confidence
-                })
-                
+                    extracted_data.append({
+                        "bbox": box,
+                        "text": str(text).strip(),
+                        "confidence": float(score)
+                    })
             except Exception as e:
-                print(f"라인 {idx} 파싱 오류: {e}, 데이터: {line}")
+                print(f"결과 파싱 오류: {e}, data: {data}")
                 continue
+        
+        if not extracted_data:
+            print("⚠ OCR 결과에서 텍스트를 찾지 못했습니다.")
         
         return extracted_data
     
