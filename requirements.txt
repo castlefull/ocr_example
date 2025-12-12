@@ -1,15 +1,15 @@
-# 이미지 처리 (버전 다운그레이드 필수!)
 opencv-python-headless==4.5.5.64
 Pillow>=10.0.0
 numpy>=1.24.0
-
-# PaddleOCR (CPU 버전만)
-paddlepaddle==3.0.0
-paddleocr>=2.7.0
-
-# 데이터 처리
 pandas>=2.0.0
 
-# Streamlit
+paddlepaddle
+paddleocr
+
+# 🔴 PaddleOCR 3.x가 내부적으로 langchain 사용
+langchain==0.0.354
+langchain-community
+
 streamlit
+
 
