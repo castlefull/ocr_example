@@ -50,12 +50,13 @@ class ImagePreprocessor:
         gray = self.grayscale(image)
         denoised = self.remove_noise(gray)
         binary = self.binarize(denoised)
-        deskewed = self.deskew(binary)
-        return deskewed
+        # deskewed = self.deskew(binary)
+        return binary
 
 # # 사용 예시
 # if __name__ == "__main__":
 #     preprocessor = ImagePreprocessor()
 #     processed = preprocessor.preprocess_pipeline("quality_form_001.jpg")
 #     cv2.imwrite("processed_001.jpg", processed)
+
 
