@@ -4,7 +4,7 @@ Pillow>=10.0.0
 numpy>=1.24.0
 
 # PaddleOCR (CPU 버전만)
-paddlepaddle==2.6.0
+paddlepaddle==3.0.0
 paddleocr>=2.7.0
 
 # 데이터 처리
@@ -12,3 +12,4 @@ pandas>=2.0.0
 
 # Streamlit
 streamlit
+
